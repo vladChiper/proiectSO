@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/stat.h>
 
 typedef struct{
 	int id;
@@ -21,6 +22,42 @@ void add(const char *district,Report r){
 	mkdir("district",0775);
 }
 
+int check_command(int argc, char ** argv){
+    if(strcmp(argv[1], "--role") != 0 ){
+        fprintf(stderr,"Role lipsa");
+        return 0;
+    }
+    if(strcmp(argv[2], "inspector") != 0 && strcmp(argv[2], "manager") != 0){
+        fprintf(stderr,"Rol Gresit");
+        return 0;
+    }
+    if(strcmp(argv[3], "--user") != 0 ){
+        fprintf(stderr,"User lipsa");
+        return 0;
+    }
+    if(strcmp(argv[5], "--add") == 0 && argv[6]){
+        return 1;
+    }
+    if(strcmp(argv[5], "--list") == 0 && argv[6]){
+        return 1;
+    }
+    if(strcmp(argv[5], "--view") == 0 && argv[6] && argv[7]){
+        return 1;
+    }
+    if(strcmp(argv[5], "--remove_report") == 0 && argv[6] && argv[7]){
+        return 1;
+    }
+    if(strcmp(argv[5], "--update_threshold") == 0 && argv[6] && argv[7]){
+        return 1;
+    }
+    if(strcmp(argv[5], "--filter") == 0 && argv[6] && argv[7]){
+        return 1;
+    }
+
+
+
+    return 0;
+}
 
 
 int main(int argc,char *argv[]){
@@ -32,8 +69,8 @@ int main(int argc,char *argv[]){
     char value[50]="";
     char condition[50]="";
 
-	
-	for (int i=1;i<argc;i++){
+    if(check_command(argc, argv)){
+        for (int i=1;i<argc;i++){
 		if(strcmp(argv[i], "--role")== 0 && i+1<argc){
 			strcpy(role,argv[++i]);
 		}
@@ -42,7 +79,7 @@ int main(int argc,char *argv[]){
 		}
 		else if(strcmp(argv[i], "--add")== 0 && i+1<argc){
             strcpy(command,"add");
-			strcpy(district,argv[++i]);
+			strcpy(district_id,argv[++i]);
 		}
         else if(strcmp(argv[i], "--list")== 0 && i+1<argc){
             strcpy(command,"list");
@@ -69,9 +106,14 @@ int main(int argc,char *argv[]){
             strcpy(condition,argv[++i]);
         }
         
-	}
+	    }
+    }
+
 	
+	
+    printf("Role: %s\nUser: %s\nCommand: %s\n", role, user, command);
 			
 	
 	
 	return 0;
+}
