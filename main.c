@@ -18,7 +18,6 @@ int check_command(int argc, char ** argv){
         fprintf(stderr,"User lipsa\n"); return 0;
     }
     
-    // Verificam prezenta argumentelor minime pentru a nu cauza Segmentation Fault cand accesam argv[6/7]
     if(strcmp(argv[5], "--add") == 0 && argc >= 7) return 1;
     if(strcmp(argv[5], "--list") == 0 && argc >= 7) return 1;
     if(strcmp(argv[5], "--view") == 0 && argc >= 8) return 1;
@@ -77,10 +76,9 @@ int main(int argc, char *argv[]) {
             }
         }
     } else {
-        return -1; // Abandoneaza executia daca nu a trecut verificarile
+        return -1; 
     }
 
-    // Call-uri catre functionalitati 
     if(strcmp(command, "add") == 0) {
         add_report(role, user, district_id);
     }

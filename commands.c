@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <time.h>
 
-// Funcție ajutătoare pentru a converti permisiunile în string (ex: rw-rw-r--)
 void mode_to_str(mode_t mode, char *str) {
     strcpy(str, "---------");
     if (mode & S_IRUSR) str[0] = 'r';
@@ -22,16 +21,14 @@ void mode_to_str(mode_t mode, char *str) {
     if (mode & S_IXOTH) str[8] = 'x';
 }
 
-// Înregistrarea operațiunilor (doar managerul are voie să scrie conform cerinței 644)
+// Înregistrarea operațiunilor 
 void log_action(const char *district, const char *role, const char *user, const char *action) {
     char path[256];
     sprintf(path, "%s/logged_district", district);
     
-    // Verificăm dacă utilizatorul este inspector și încercăm să evităm scrierea
     if (strcmp(role, "inspector") == 0) {
         struct stat st;
         if (stat(path, &st) == 0 && !(st.st_mode & S_IWGRP)) {
-            // Refuză scrierea pentru inspector conform permisiunilor st_mode
             fprintf(stderr, "Permission denied: Inspector nu poate scrie in log.\n");
             return;
         }
@@ -74,23 +71,31 @@ void add_report(const char *role, const char *user, const char *district) {
         perror("Eroare la deschiderea reports.dat");
         return;
     }
-    chmod(path, 0664); // Se forțează 664 după creare conform cerinței
+    chmod(path, 0664); 
 
     Report r;
-    r.id = (int)time(NULL) % 10000;
-    strncpy(r.inspector, user, 49); r.inspector[49]='\0';
-    r.lat = 45.75; // Dummy valoare
-    r.lon = 21.23; // Dummy valoare
-    strcpy(r.category, "road");
-    r.severity = 2;
-    r.timestamp = time(NULL);
-    strcpy(r.description, "Issue reported implicitly");
 
+    r.id = rand() % 10000; 
+    strncpy(r.inspector, user, 49); 
+    r.inspector[49] = '\0';
+
+    const char* categorii[] = {"road", "lighting", "sewage", "vegetation", "waste"};
+    const char* descrieri[] = {"Gropi in carosabil", "Bec ars", "Scurgere blocata", "Copac cazut", "Gunoi depozitat ilegal"};
+
+    r.lat = 45.0 + (float)(rand() % 1000) / 1000.0; 
+    r.lon = 21.0 + (float)(rand() % 1000) / 1000.0;
+
+    strcpy(r.category, categorii[rand() % 5]);
+    r.severity = (rand() % 5) + 1;
+    r.timestamp = time(NULL);
+    strcpy(r.description, descrieri[rand() % 5]);
+
+    // Scrierea in fisier
     write(fd, &r, sizeof(Report));
     close(fd);
-    
-    log_action(district, role, user, "Added report");
-    printf("Raport %d adaugat cu succes in %s.\n", r.id, district);
+
+    log_action(district, role, user, "Added random report");
+    printf("Raport %d (%s) adaugat cu succes in %s.\n", r.id, r.category, district);
 }
 
 // Comanda --list
@@ -104,7 +109,6 @@ void list_reports(const char *role, const char *user, const char *district) {
         return;
     }
     
-    // Verificam permisiuni in prealabil (pentru r)
     if (strcmp(role, "inspector") == 0 && !(st.st_mode & S_IRGRP)) {
         fprintf(stderr, "Acces interzis pentru inspector!\n"); return;
     }
@@ -180,7 +184,6 @@ void remove_report(const char *role, const char *user, const char *district, int
         }
         
         if (found) {
-            // Dupa ce am sters, scriem inapoi peste locatiile anterioare mutand cu lseek
             lseek(fd, write_pos, SEEK_SET);
             write(fd, &r, sizeof(Report));
             lseek(fd, read_pos, SEEK_SET); // Restabilim pozitia citirii
