@@ -24,6 +24,7 @@ int check_command(int argc, char ** argv){
     if(strcmp(argv[5], "--remove_report") == 0 && argc >= 8) return 1;
     if(strcmp(argv[5], "--update_threshold") == 0 && argc >= 8) return 1;
     if(strcmp(argv[5], "--filter") == 0 && argc >= 8) return 1;
+    if(strcmp(argv[5], "--remove_district") == 0 && argc >= 7) return 1;
 
     fprintf(stderr, "Comanda specificata gresit.\n");
     return 0;
@@ -74,6 +75,10 @@ int main(int argc, char *argv[]) {
                 strcpy(district_id,argv[++i]);
                 if(i+1<argc) strcpy(condition,argv[++i]);
             }
+            else if(strcmp(argv[i], "--remove_district")== 0 && i+1<argc){
+                strcpy(command,"remove_district");
+                strcpy(district_id,argv[++i]);
+            }
         }
     } else {
         return -1; 
@@ -96,6 +101,9 @@ int main(int argc, char *argv[]) {
     }
     else if(strcmp(command, "filter") == 0) {
         filter_reports(role, user, district_id, condition);
+    }
+    else if(strcmp(command, "remove_district") == 0) {
+        remove_district(role, user, district_id);
     }
     
     return 0;

@@ -75,20 +75,20 @@ void add_report(const char *role, const char *user, const char *district) {
 
     Report r;
 
-    r.id = rand() % 10000; 
+    r.id = (int)time(NULL) % 10000;
     strncpy(r.inspector, user, 49); 
     r.inspector[49] = '\0';
 
     const char* categorii[] = {"road", "lighting", "sewage", "vegetation", "waste"};
     const char* descrieri[] = {"Gropi in carosabil", "Bec ars", "Scurgere blocata", "Copac cazut", "Gunoi depozitat ilegal"};
 
-    r.lat = 45.0 + (float)(rand() % 1000) / 1000.0; 
-    r.lon = 21.0 + (float)(rand() % 1000) / 1000.0;
+    r.lat = 45.0 + (float)(time(NULL) % 1000) / 1000.0; 
+    r.lon = 21.0 + (float)(time(NULL) % 1000) / 1000.0;
 
-    strcpy(r.category, categorii[rand() % 5]);
-    r.severity = (rand() % 5) + 1;
+    strcpy(r.category, categorii[(int)time(NULL) % 5]);
+    r.severity = (time(NULL) % 5) + 1;
     r.timestamp = time(NULL);
-    strcpy(r.description, descrieri[rand() % 5]);
+    strcpy(r.description, descrieri[(int)time(NULL) % 5] );
 
     // Scrierea in fisier
     write(fd, &r, sizeof(Report));
@@ -228,35 +228,24 @@ void update_threshold(const char *role, const char *user, const char *district, 
 
 // --- Functii AI Generate pentru implementare Filtru ---
 int parse_condition(const char *input, char *field, char *op, char *value) {
-    char temp[256];
-    strncpy(temp, input, 255);
-    temp[255] = '\0';
-    
-    char *colon1 = strchr(temp, ':');
-    if(!colon1) return 0;
-    *colon1 = '\0';
-    strcpy(field, temp);
-    
-    char *colon2 = strchr(colon1 + 1, ':');
-    if(!colon2) return 0;
-    *colon2 = '\0';
-    strcpy(op, colon1 + 1);
-    strcpy(value, colon2 + 1);
-    return 1;
+    if( sscanf(input, "%[^:]:%[^:]%s", field, op, value) == 3 ){
+        return 1;
+    }
+    return 0;
 }
 
-int match_condition(Report *r, const char *field, const char *op, const char *value) {
+int match_condition(Report r, const char *field, const char *op, const char *value) {
     if (strcmp(field, "severity") == 0) {
         int v = atoi(value);
-        if (strcmp(op, "==") == 0) return r->severity == v;
-        if (strcmp(op, "!=") == 0) return r->severity != v;
-        if (strcmp(op, "<") == 0) return r->severity < v;
-        if (strcmp(op, "<=") == 0) return r->severity <= v;
-        if (strcmp(op, ">") == 0) return r->severity > v;
-        if (strcmp(op, ">=") == 0) return r->severity >= v;
+        if (strcmp(op, "==") == 0) return r.severity == v;
+        if (strcmp(op, "!=") == 0) return r.severity != v;
+        if (strcmp(op, "<") == 0) return r.severity < v;
+        if (strcmp(op, "<=") == 0) return r.severity <= v;
+        if (strcmp(op, ">") == 0) return r.severity > v;
+        if (strcmp(op, ">=") == 0) return r.severity >= v;
     } else if (strcmp(field, "category") == 0) {
-        if (strcmp(op, "==") == 0) return strcmp(r->category, value) == 0;
-        if (strcmp(op, "!=") == 0) return strcmp(r->category, value) != 0;
+        if (strcmp(op, "==") == 0) return strcmp(r.category, value) == 0;
+        if (strcmp(op, "!=") == 0) return strcmp(r.category, value) != 0;
     }
     return 0;
 }
@@ -269,6 +258,7 @@ void filter_reports(const char *role, const char *user, const char *district, co
     int fd = open(path, O_RDONLY);
     if (fd < 0) { perror("Eroare"); return; }
 
+    printf("%s \n", condition);
     char field[50], op[10], val[50];
     if (!parse_condition(condition, field, op, val)) {
         fprintf(stderr, "Format conditie invalid. Asteptat: field:operator:value\n");
@@ -279,10 +269,42 @@ void filter_reports(const char *role, const char *user, const char *district, co
     Report r;
     printf("\n--- Rezultate Filtru in %s ---\n", district);
     while (read(fd, &r, sizeof(Report)) == sizeof(Report)) {
-        if (match_condition(&r, field, op, val)) {
+        printf("Citim %d \n", r.severity);
+        if (match_condition(r, field, op, val)) {
             printf("ID: %d | Inspector: %s | Categorie: %s | Severitate: %d\n", r.id, r.inspector, r.category, r.severity);
         }
     }
     close(fd);
     log_action(district, role, user, "Filtered reports");
+}
+
+void remove_district(const char *role, const char *user, const char * district_id){
+    if (strcmp(role, "manager") != 0) {
+        fprintf(stderr, "Eroare: Doar managerii pot sterge districte.\n");
+        return;
+    }
+
+    //printf("Stergem districtul: %s \n", district_id);
+
+    char symlink[256];
+    sprintf(symlink,"active_reports-%s", district_id);
+    if(unlink(symlink) == -1){
+        printf("Eroare la unlink, probabil districtul nu exista.\n");
+        return;
+    }
+
+    pid_t pid = fork();
+    if(pid < 0){
+        printf("Fork Fail\n");
+        return;
+    }
+    else if(pid == 0){ //intram in procesul copil
+        execlp("rm" ,"rm", "-rf",district_id, NULL);
+        printf("Eroare in execlp\n");
+        return;
+    } else {
+        //printf("Caz parinte\n");
+        waitpid(pid, NULL, 0);
+        printf("Districtul %s a fost sters.\n", district_id);
+    }
 }

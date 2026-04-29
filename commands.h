@@ -2,6 +2,7 @@
 #define COMMANDS_H
 
 #include <time.h>
+#include <sys/wait.h>
 
 typedef struct {
     int id;
@@ -20,5 +21,6 @@ void view_report(const char *role, const char *user, const char *district, int r
 void remove_report(const char *role, const char *user, const char *district, int report_id);
 void update_threshold(const char *role, const char *user, const char *district, int value);
 void filter_reports(const char *role, const char *user, const char *district, const char *condition);
+void remove_district(const char *role, const char *user, const char * district_id);
 
 #endif
