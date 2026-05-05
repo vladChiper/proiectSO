@@ -1,0 +1,5 @@
+city_manager
+monitor_reports
+*.exe
+*.tar.gz
+.monitor_pid
