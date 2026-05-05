@@ -75,20 +75,23 @@ void add_report(const char *role, const char *user, const char *district) {
 
     Report r;
 
-    r.id = (int)time(NULL) % 10000;
+    srand((unsigned int)time(NULL));
+
+    r.id = rand() % 10000;
     strncpy(r.inspector, user, 49); 
     r.inspector[49] = '\0';
 
     const char* categorii[] = {"road", "lighting", "sewage", "vegetation", "waste"};
     const char* descrieri[] = {"Gropi in carosabil", "Bec ars", "Scurgere blocata", "Copac cazut", "Gunoi depozitat ilegal"};
 
-    r.lat = 45.0 + (float)(time(NULL) % 1000) / 1000.0; 
-    r.lon = 21.0 + (float)(time(NULL) % 1000) / 1000.0;
+    r.lat = 45.0 + (float)(rand() % 1000) / 1000.0; 
+    r.lon = 21.0 + (float)(rand() % 1000) / 1000.0;
 
-    strcpy(r.category, categorii[(int)time(NULL) % 5]);
-    r.severity = (time(NULL) % 5) + 1;
+    int cat_index = rand() % 5;
+    strcpy(r.category, categorii[cat_index]);
+    strcpy(r.description, descrieri[cat_index]);
+    r.severity = (rand() % 5) + 1;
     r.timestamp = time(NULL);
-    strcpy(r.description, descrieri[(int)time(NULL) % 5] );
 
     // Scrierea in fisier
     write(fd, &r, sizeof(Report));
@@ -228,7 +231,7 @@ void update_threshold(const char *role, const char *user, const char *district, 
 
 // --- Functii AI Generate pentru implementare Filtru ---
 int parse_condition(const char *input, char *field, char *op, char *value) {
-    if( sscanf(input, "%[^:]:%[^:]%s", field, op, value) == 3 ){
+    if( sscanf(input, "%[^:]:%[^:]:%s", field, op, value) == 3 ){
         return 1;
     }
     return 0;
@@ -269,7 +272,7 @@ void filter_reports(const char *role, const char *user, const char *district, co
     Report r;
     printf("\n--- Rezultate Filtru in %s ---\n", district);
     while (read(fd, &r, sizeof(Report)) == sizeof(Report)) {
-        printf("Citim %d \n", r.severity);
+        // printf("Citim %d \n", r.severity);
         if (match_condition(r, field, op, val)) {
             printf("ID: %d | Inspector: %s | Categorie: %s | Severitate: %d\n", r.id, r.inspector, r.category, r.severity);
         }

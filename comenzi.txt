@@ -1,0 +1,5 @@
+./city_manager --role inspector --user vlad --add downtown
+./city_manager --role inspector --user bob --filter downtown "severity:>=:2"
+./city_manager --role manager --user alice --remove_district downtown
+./city_manager --role inspector --user bob --list downtown
+./city_manager --role manager --user vlad --remove_district downtown
