@@ -19,6 +19,24 @@ void handle_sigusr1(int sig) {
 }
 
 int main() {
+
+    FILE *f = fopen(".monitor_pid","r");
+    if( f != NULL){
+        int existing_pid;
+        if(fscanf(f, "%d", &existing_pid) == 1){
+            if(kill(existing_pid, 0) == 0){
+                char err_msg[64];
+                int len;
+                len = sprintf(err_msg, "Monitorul era deja pornit cu pid: %d\n", existing_pid);
+                write(STDOUT_FILENO, err_msg, len);
+                fclose(f);
+                return 1;
+            }
+        }
+    }
+    fclose(f);
+
+
     struct sigaction sa_int, sa_usr1;
 
     // Configurare handler pentru SIGINT si SIGUSR1
